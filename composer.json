@@ -1,7 +1,7 @@
 {
-    "name": "mysql-workbench-schema-exporter/mysql-workbench-schema-exporter",
+    "name": "hydrax-skarrag/mysql-workbench-doctrine2-annotation-schema-exporter",
     "type": "cli",
-    "description": "MySQL Workbench Schema Exporter",
+    "description": "MySQL Workbench Doctrine2 Annotation Schema Exporter",
     "keywords": ["mysql","workbench","database","doctrine","cli"],
     "homepage": "https://github.com/johmue/mysql-workbench-schema-exporter",
     "license": "MIT",
@@ -9,6 +9,11 @@
         {
             "name": "Johannes Mueller",
             "email": "circus2@web.de",
+            "role": "Developer"
+        },
+        {
+            "name": "Daniel Kubitza",
+            "email": "github@hydrax.org",
             "role": "Developer"
         }
     ],
