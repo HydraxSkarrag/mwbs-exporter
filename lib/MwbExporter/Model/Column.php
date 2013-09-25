@@ -28,6 +28,7 @@
 namespace MwbExporter\Model;
 
 use MwbExporter\Registry\RegistryHolder;
+use Doctrine\Common\Inflector\Inflector;
 
 class Column extends Base
 {
@@ -103,6 +104,18 @@ class Column extends Base
         return $this->parameters->get('name');
     }
 
+    /**
+     * Get raw column name.
+     *
+     * @return string
+     */
+    public function getPhpColumnName()
+    {
+    	$name = $this->columnNameBeautifier($this->getColumnName());
+    	$name = lcfirst($name);
+    	return $name;
+    }
+    
     /**
      * Get column type, either by its simpleType or userType.
      *
@@ -294,7 +307,7 @@ class Column extends Base
      */
     public function getRelatedName($reference, $code = true)
     {
-        return $this->isMultiReferences($reference) ? $this->formatRelatedName($reference->getForeign()->getColumnName(), $code) : '';
+        return $this->isMultiReferences($reference) ? $reference->getParameters()->get('name') : '';
     }
 
     /**
@@ -308,6 +321,25 @@ class Column extends Base
     public function getManyToManyRelatedName($tablename, $column, $code = true)
     {
         return $this->getParent()->getManyToManyCount($tablename) > 1 ? $this->formatRelatedName($column, $code) : '';
+    }
+    
+    /**
+     * get the entity name for a foreign field
+     * 
+     * @param \MwbExporter\Model\ForeignKey $foreign
+     */
+    public function getManyToOneEntityName(\MwbExporter\Model\ForeignKey $foreign)
+    {
+    	$targetEntity = $foreign->getOwningTable()->getModelName();
+    	
+    	$related = $this->getRelatedName($foreign);
+    	
+    	$name = Inflector::pluralize($targetEntity);
+    	if (!$related) {
+    		$name = lcfirst($name);
+    	}
+    	
+    	return $related . $name;
     }
 
     /**

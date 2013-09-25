@@ -286,7 +286,13 @@ class Table extends BaseTable
             ->write('{')
             ->indent()
                 ->write('return array(%s);', implode(', ', array_map(function($column) {
-                    return sprintf('\'%s\'', $column->getColumnName());
+                	$name = $column->getPhpColumnName();
+                	if (!$column->isPrimary() && ($column->getLocalForeignKey() || $column->hasOneToManyRelation())) {
+                		$name = $column->getLocalForeignKey()->getParameters()->get('name');
+                	}
+                	$return = sprintf('\'%s\'', $name);
+                	
+                    return $return;
                 }, $columns)))
             ->outdent()
             ->write('}')

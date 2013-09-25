@@ -36,7 +36,7 @@ class Column extends BaseColumn
     public function asAnnotation()
     {
         $attributes = array(
-            'name' => ($columnName = $this->getTable()->quoteIdentifier($this->getColumnName())) !== $this->getColumnName() ? $columnName : null,
+            'name' => $this->getTable()->quoteIdentifier($this->getColumnName()),
             'type' => $this->getDocument()->getFormatter()->getDatatypeConverter()->getMappedType($this),
         );
         if (($length = $this->parameters->get('length')) && ($length != -1)) {
@@ -48,27 +48,37 @@ class Column extends BaseColumn
         }
         if (!$this->isNotNull()) {
             $attributes['nullable'] = true;
+        }  else {
+            $attributes['nullable'] = false;
         }
         if($this->isUnsigned()) {
             $attributes['options'] = array('unsigned' => true);
         }
-
+        if ($this->parameters->get('comment')) {
+        	$attributes['options']["comment"] = $this->getComment(false);
+        }
+        
         return $attributes;
     }
 
     public function write(WriterInterface $writer)
     {
         $comment = $this->getComment();
+        
+        $converter = $this->getDocument()->getFormatter()->getDatatypeConverter();
+        $nativeType = $converter->getNativeType($converter->getMappedType($this));
+        
         $writer
             ->write('/**')
             ->writeIf($comment, $comment)
+            ->write(' * @var '.$nativeType)
             ->writeIf($this->isPrimary,
                     ' * '.$this->getTable()->getAnnotation('Id'))
             ->write(' * '.$this->getTable()->getAnnotation('Column', $this->asAnnotation()))
             ->writeIf($this->isAutoIncrement(),
                     ' * '.$this->getTable()->getAnnotation('GeneratedValue', array('strategy' => 'AUTO')))
             ->write(' */')
-            ->write('protected $'.$this->getColumnName().';')
+            ->write('private $'.$this->getPhpColumnName().';')
             ->write('')
         ;
 
@@ -112,7 +122,7 @@ class Column extends BaseColumn
 
             $annotationOptions = array(
                 'targetEntity' => $targetEntityFQCN,
-                'mappedBy' => lcfirst($mappedBy),
+                'mappedBy' => $this->isMultiReferences($foreign) ? $this->getRelatedName($foreign) : lcfirst($mappedBy),
                 'cascade' => $formatter->getCascadeOption($foreign->parseComment('cascade')),
                 'fetch' => $formatter->getFetchOption($foreign->parseComment('fetch')),
                 'orphanRemoval' => $formatter->getBooleanOption($foreign->parseComment('orphanRemoval')),
@@ -127,13 +137,14 @@ class Column extends BaseColumn
 
             //check for OneToOne or OneToMany relationship
             if ($foreign->isManyToOne()) { // is OneToMany
-                $related = $this->getRelatedName($foreign);
+            	$name = $this->getManyToOneEntityName($foreign);
+				
                 $writer
                     ->write('/**')
                     ->write(' * '.$this->getTable()->getAnnotation('OneToMany', $annotationOptions))
                     ->write(' * '.$this->getTable()->getAnnotation('JoinColumn', $joinColumnAnnotationOptions))
                     ->write(' */')
-                    ->write('protected $'.lcfirst(Inflector::pluralize($targetEntity)).$related.';')
+                    ->write('protected $'. $name .';')
                     ->write('')
                 ;
             } else { // is OneToOne
@@ -170,19 +181,28 @@ class Column extends BaseColumn
 
             //check for OneToOne or ManyToOne relationship
             if ($this->local->isManyToOne()) { // is ManyToOne
-                $related = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName());
-                $refRelated = $this->local->getLocal()->getRelatedName($this->local);
+                $name = lcfirst($targetEntity);
+                $inversedBy = Inflector::pluralize($annotationOptions['inversedBy']);
+                $refRelated = '';
+                
+                if ($this->getParent()->getManyToManyCount($this->local->getReferencedTable()->getRawTableName()) > 1) {
+                	$name = $this->local->getParameters()->get('name');
+                	$refRelated = $this->local->getParameters()->get('name');
+                } else {
+                	$inversedBy = lcfirst($inversedBy);
+                }
+                
                 if ($this->local->parseComment('unidirectional') === 'true') {
                     $annotationOptions['inversedBy'] = null;
                 } else {
-                    $annotationOptions['inversedBy'] = lcfirst(Inflector::pluralize($annotationOptions['inversedBy'])) . $refRelated;
+                    $annotationOptions['inversedBy'] = $refRelated . $inversedBy;
                 }
                 $writer
                     ->write('/**')
                     ->write(' * '.$this->getTable()->getAnnotation('ManyToOne', $annotationOptions))
                     ->write(' * '.$this->getTable()->getAnnotation('JoinColumn', $joinColumnAnnotationOptions))
                     ->write(' */')
-                    ->write('protected $'.lcfirst($targetEntity).$related.';')
+                    ->write('protected $'.$name.';')
                     ->write('')
                 ;
             } else { // is OneToOne
@@ -215,15 +235,15 @@ class Column extends BaseColumn
         $writer
             // setter
             ->write('/**')
-            ->write(' * Set the value of '.$this->getColumnName().'.')
+            ->write(' * Set the value of '.$this->getPhpColumnName().'.')
             ->write(' *')
-            ->write(' * @param '.$nativeType.' $'.$this->getColumnName())
+            ->write(' * @param '.$nativeType.' $'.$this->getPhpColumnName())
             ->write(' * @return '.$table->getNamespace())
             ->write(' */')
             ->write('public function set'.$this->columnNameBeautifier($this->getColumnName()).'($'.$this->getColumnName().')')
             ->write('{')
             ->indent()
-                ->write('$this->'.$this->getColumnName().' = $'.$this->getColumnName().';')
+                ->write('$this->'.$this->getPhpColumnName().' = $'.$this->getColumnName().';')
                 ->write('')
                 ->write('return $this;')
             ->outdent()
@@ -231,14 +251,14 @@ class Column extends BaseColumn
             ->write('')
             // getter
             ->write('/**')
-            ->write(' * Get the value of '.$this->getColumnName().'.')
+            ->write(' * Get the value of '.$this->getPhpColumnName().'.')
             ->write(' *')
             ->write(' * @return '.$nativeType)
             ->write(' */')
             ->write('public function get'.$this->columnNameBeautifier($this->getColumnName()).'()')
             ->write('{')
             ->indent()
-                ->write('return $this->'.$this->getColumnName().';')
+                ->write('return $this->'.$this->getPhpColumnName().';')
             ->outdent()
             ->write('}')
             ->write('')
