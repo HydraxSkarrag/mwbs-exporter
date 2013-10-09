@@ -1,9 +1,9 @@
 {
-    "name": "hydrax-skarrag/mysql-workbench-doctrine2-schema-exporter",
+    "name": "hydrax-skarrag/doctrine-mwbs-exporter",
     "type": "cli",
-    "description": "MySQL Workbench Doctrine2 Schema Exporter",
+    "description": "MySQL Workbench Schema Exporter for Doctrine2 Annotations",
     "keywords": ["mysql","workbench","database","doctrine","cli"],
-    "homepage": "https://github.com/HydraxSkarrag/mysql-workbench-doctrine2-schema-exporter",
+    "homepage": "https://github.com/HydraxSkarrag/doctrine-mwbs-exporter",
     "license": "MIT",
     "authors": [
         {
@@ -21,7 +21,7 @@
         "php": ">=5.3.0",
         "doctrine/inflector": "1.0.*@dev"
     },
-    "bin": ["cli/export.php"],
+    "bin": ["cli/mwbs-export.php"],
     "autoload": {
         "psr-0": { "MwbExporter\\": "lib/" }
     }
