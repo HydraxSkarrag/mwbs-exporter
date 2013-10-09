@@ -1,28 +1,38 @@
 {
-    "name": "hydrax-skarrag/mwbs-exporter",
-    "type": "cli",
-    "description": "MySQL Workbench Schema Exporter for Doctrine2 Annotations",
-    "keywords": ["mysql","workbench","database","doctrine","cli"],
-    "homepage": "https://github.com/HydraxSkarrag/mwbs-exporter",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Johannes Mueller",
-            "email": "circus2@web.de",
-            "role": "Developer"
-        },
-        {
-            "name": "Daniel Kubitza",
-            "email": "github@hydrax.org",
-            "role": "Developer"
-        }
-    ],
-    "require": {
-        "php": ">=5.3.0",
-        "doctrine/inflector": "1.0.*@dev"
-    },
-    "bin": ["cli/mwbs-export.php"],
-    "autoload": {
-        "psr-0": { "MwbExporter\\": "lib/" }
-    }
+	"name" : "hydrax-skarrag/mwbs-exporter",
+	"description" : "MySQL Workbench Schema Exporter for Doctrine2 Annotations",
+	"type" : "cli",
+	"authors" : [{
+			"name" : "Johannes Mueller",
+			"email" : "circus2@web.de",
+			"role" : "Developer"
+		}, {
+			"name" : "Daniel Kubitza",
+			"email" : "github@hydrax.org",
+			"role" : "Developer"
+		}
+	],
+	"keywords" : [
+		"mysql",
+		"workbench",
+		"database",
+		"doctrine",
+		"cli"
+	],
+	"homepage" : "https://github.com/HydraxSkarrag/mwbs-exporter",
+	"license" : [
+		"MIT"
+	],
+	"require" : {
+		"php" : ">=5.3.0",
+		"doctrine/inflector" : "1.0.*@dev"
+	},
+	"autoload" : {
+		"psr-0" : {
+			"MwbExporter\\" : "lib/"
+		}
+	},
+	"bin" : [
+		"cli/mwbs-export.php"
+	]
 }
