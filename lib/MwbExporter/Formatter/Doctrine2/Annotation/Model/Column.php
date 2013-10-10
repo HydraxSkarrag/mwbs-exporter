@@ -376,8 +376,20 @@ class Column extends BaseColumn
             $unidirectional = ($this->local->parseComment('unidirectional') === 'true');
 
             if ($this->local->isManyToOne()) { // is ManyToOne
-                $related = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName());
                 $related_text = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName(), false);
+                $function_name = null;
+
+                if ($this->getParent()->getManyToManyCount($this->local->getReferencedTable()->getRawTableName()) == 1) {
+                    /*
+                     * use the name of the target model when there is only one column with a reference to it.
+                     */
+                    $function_name = $this->columnNameBeautifier($this->local->getReferencedTable()->getModelName());
+                } else {
+                    /*
+                     * use the name of the foreign key if there is more than one column holding a relation from this table to the target table.
+                     */
+                    $function_name = $this->columnNameBeautifier($this->local->getParameters()->get('name'));
+                }
 
                 $writer
                     // setter
@@ -387,7 +399,7 @@ class Column extends BaseColumn
                     ->write(' * @param '.$this->local->getReferencedTable()->getNamespace().' $'.lcfirst($this->local->getReferencedTable()->getModelName()))
                     ->write(' * @return '.$table->getNamespace())
                     ->write(' */')
-                    ->write('public function set'.$this->columnNameBeautifier($this->local->getReferencedTable()->getModelName()).$related.'('.$this->local->getReferencedTable()->getModelName().' $'.lcfirst($this->local->getReferencedTable()->getModelName()).' = null)')
+                    ->write('public function set'.$function_name.'('.$this->local->getReferencedTable()->getModelName().' $'.lcfirst($this->local->getReferencedTable()->getModelName()).' = null)')
                     ->write('{')
                     ->indent()
                         ->write('$this->'.lcfirst($this->local->getReferencedTable()->getModelName()).$related.' = $'.lcfirst($this->local->getReferencedTable()->getModelName()).';')
@@ -402,7 +414,7 @@ class Column extends BaseColumn
                     ->write(' *')
                     ->write(' * @return '.$this->local->getReferencedTable()->getNamespace())
                     ->write(' */')
-                    ->write('public function get'.$this->columnNameBeautifier($this->local->getReferencedTable()->getModelName()).$related.'()')
+                    ->write('public function get'.$function_name.'()')
                     ->write('{')
                     ->indent()
                         ->write('return $this->'.lcfirst($this->local->getReferencedTable()->getModelName()).$related.';')
