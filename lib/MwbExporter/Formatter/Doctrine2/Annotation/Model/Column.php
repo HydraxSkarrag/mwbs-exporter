@@ -30,6 +30,7 @@ namespace MwbExporter\Formatter\Doctrine2\Annotation\Model;
 use MwbExporter\Formatter\Doctrine2\Model\Column as BaseColumn;
 use Doctrine\Common\Inflector\Inflector;
 use MwbExporter\Writer\WriterInterface;
+use MwbExporter\Formatter\Doctrine2\Annotation\Formatter;
 
 class Column extends BaseColumn
 {
@@ -57,17 +58,21 @@ class Column extends BaseColumn
         if ($this->parameters->get('comment')) {
         	$attributes['options']["comment"] = $this->getComment(false);
         }
-        
+
         return $attributes;
     }
 
     public function write(WriterInterface $writer)
     {
         $comment = $this->getComment();
-        
+
         $converter = $this->getDocument()->getFormatter()->getDatatypeConverter();
         $nativeType = $converter->getNativeType($converter->getMappedType($this));
-        
+
+        $generateBaseClasses = $this->getDocument()->getConfig()->get(Formatter::CFG_GENERATE_BASE_CLASSES);
+
+        $accessModifier = $generateBaseClasses ? 'protected' : 'private';
+
         $writer
             ->write('/**')
             ->writeIf($comment, $comment)
@@ -78,7 +83,7 @@ class Column extends BaseColumn
             ->writeIf($this->isAutoIncrement(),
                     ' * '.$this->getTable()->getAnnotation('GeneratedValue', array('strategy' => 'AUTO')))
             ->write(' */')
-            ->write('private $'.$this->getPhpColumnName().';')
+            ->write($accessModifier.' $'.$this->getPhpColumnName().';')
             ->write('')
         ;
 
@@ -138,7 +143,7 @@ class Column extends BaseColumn
             //check for OneToOne or OneToMany relationship
             if ($foreign->isManyToOne()) { // is OneToMany
             	$name = $this->getManyToOneEntityName($foreign);
-				
+
                 $writer
                     ->write('/**')
                     ->write(' * '.$this->getTable()->getAnnotation('OneToMany', $annotationOptions))
@@ -184,14 +189,14 @@ class Column extends BaseColumn
                 $name = lcfirst($targetEntity);
                 $inversedBy = Inflector::pluralize($annotationOptions['inversedBy']);
                 $refRelated = '';
-                
+
                 if ($this->getParent()->getManyToManyCount($this->local->getReferencedTable()->getRawTableName()) > 1) {
                 	$name = $this->local->getParameters()->get('name');
                 	$refRelated = $this->local->getParameters()->get('name');
                 } else {
                 	$inversedBy = lcfirst($inversedBy);
                 }
-                
+
                 if ($this->local->parseComment('unidirectional') === 'true') {
                     $annotationOptions['inversedBy'] = null;
                 } else {
@@ -357,6 +362,7 @@ class Column extends BaseColumn
             if ($this->local->isManyToOne()) { // is ManyToOne
                 $related = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName());
                 $related_text = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName(), false);
+
                 $writer
                     // setter
                     ->write('/**')
