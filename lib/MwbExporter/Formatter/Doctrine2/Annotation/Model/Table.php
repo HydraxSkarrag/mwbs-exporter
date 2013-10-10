@@ -200,7 +200,7 @@ class Table extends BaseTable
         $tableFileName = $this->getTableFileName();
 
         if ($generateBaseClasses) {
-        	if (true || !file_exists($writer->getStorage()->getFile($tableFileName))) {
+        	if (!file_exists($writer->getStorage()->getFile($tableFileName))) {
 	        	$writer
 		            ->open($tableFileName)
 		            ->write('<?php')
