@@ -376,6 +376,7 @@ class Column extends BaseColumn
             $unidirectional = ($this->local->parseComment('unidirectional') === 'true');
 
             if ($this->local->isManyToOne()) { // is ManyToOne
+                $related = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName());
                 $related_text = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName(), false);
                 $function_name = null;
 
