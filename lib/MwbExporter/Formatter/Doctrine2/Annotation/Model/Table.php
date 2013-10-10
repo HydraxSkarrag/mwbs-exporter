@@ -190,11 +190,47 @@ class Table extends BaseTable
         }
         $skipGetterAndSetter = $this->getDocument()->getConfig()->get(Formatter::CFG_SKIP_GETTER_SETTER);
         $serializableEntity  = $this->getDocument()->getConfig()->get(Formatter::CFG_GENERATE_ENTITY_SERIALIZATION);
+        $generateBaseClasses = $this->getDocument()->getConfig()->get(Formatter::CFG_GENERATE_BASE_CLASSES);
+        $baseNamespace = 'Base';
         $lifecycleCallbacks  = $this->getLifecycleCallbacks();
 
         $comment = $this->getComment();
+        $modelName = $this->getModelName();
+
+        $tableFileName = $this->getTableFileName();
+
+        if ($generateBaseClasses) {
+        	if (true || !file_exists($writer->getStorage()->getFile($tableFileName))) {
+	        	$writer
+		            ->open($tableFileName)
+		            ->write('<?php')
+		            ->write('')
+		            ->write('namespace %s;', $namespace)
+		            ->write('')
+		            ->writeCallback(function(WriterInterface $writer, Table $_this = null) {
+		                $_this->writeUsedClasses($writer);
+		            })
+		            ->write('use %1$s\%2$s\%3$s as %2$s%3$s;', $namespace, $baseNamespace, $modelName)
+		            ->write('')
+		            ->write('/**')
+		            ->write(' * '.$this->getNamespace(null, false))
+		            ->write(' * '.$this->getAnnotation('Entity', array('repositoryClass' => $this->getDocument()->getConfig()->get(Formatter::CFG_AUTOMATIC_REPOSITORY) ? $repositoryNamespace.$this->getModelName().'Repository' : null)))
+		            ->write(' * '.$this->getAnnotation('Table', array('name' => $this->quoteIdentifier($this->getRawTableName()), 'indexes' => $this->getIndexesAnnotation(), 'uniqueConstraints' => $this->getUniqueConstraintsAnnotation())))
+		            ->write(' */')
+		            ->write('class %1$s extends %2$s%1$s', $modelName, $baseNamespace)
+		            ->write('{')
+		            ->write('}')
+		            ->close();
+        	} else {
+
+        	}
+
+            $namespace .= '\Base';
+            $tableFileName = 'Base' . DIRECTORY_SEPARATOR . $tableFileName;
+        }
+
         $writer
-            ->open($this->getTableFileName())
+            ->open($tableFileName)
             ->write('<?php')
             ->write('')
             ->write('namespace %s;', $namespace)
@@ -203,11 +239,12 @@ class Table extends BaseTable
                 $_this->writeUsedClasses($writer);
             })
             ->write('/**')
-            ->write(' * '.$this->getNamespace(null, false))
+            ->write(' * '.$this->getNamespace(null, false).($generateBaseClasses?'\Base':''))
             ->write(' *')
             ->writeIf($comment, $comment)
-            ->write(' * '.$this->getAnnotation('Entity', array('repositoryClass' => $this->getDocument()->getConfig()->get(Formatter::CFG_AUTOMATIC_REPOSITORY) ? $repositoryNamespace.$this->getModelName().'Repository' : null)))
-            ->write(' * '.$this->getAnnotation('Table', array('name' => $this->quoteIdentifier($this->getRawTableName()), 'indexes' => $this->getIndexesAnnotation(), 'uniqueConstraints' => $this->getUniqueConstraintsAnnotation())))
+            ->writeIf(!$generateBaseClasses, ' * '.$this->getAnnotation('Entity', array('repositoryClass' => $this->getDocument()->getConfig()->get(Formatter::CFG_AUTOMATIC_REPOSITORY) ? $repositoryNamespace.$this->getModelName().'Repository' : null)))
+            ->writeIf(!$generateBaseClasses, ' * '.$this->getAnnotation('Table', array('name' => $this->quoteIdentifier($this->getRawTableName()), 'indexes' => $this->getIndexesAnnotation(), 'uniqueConstraints' => $this->getUniqueConstraintsAnnotation())))
+            ->writeIf($generateBaseClasses, ' * @ORM\MappedSuperclass')
             ->writeIf($lifecycleCallbacks, ' * @HasLifecycleCallbacks')
             ->write(' */')
             ->write('class '.$this->getModelName().(($implements = $this->getClassImplementations()) ? ' implements '.$implements : ''))
@@ -291,7 +328,7 @@ class Table extends BaseTable
                 		$name = $column->getLocalForeignKey()->getParameters()->get('name');
                 	}
                 	$return = sprintf('\'%s\'', $name);
-                	
+
                     return $return;
                 }, $columns)))
             ->outdent()
