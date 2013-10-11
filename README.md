@@ -75,9 +75,7 @@ Sample export paramaters (JSON) for doctrine2-annotation:
 Exporter Options
 ----------------
 
-### General options
-
-General options applied to all formatter.
+### Exporter options
 
   * `indentation`
 
@@ -148,7 +146,7 @@ General options applied to all formatter.
 
     If this option is enabled, all table names and column names will be quoted using backtick (`` ` ``). Usefull when the table name or column name contains reserved word. Default is `false`.
 
-### Comment behavior
+### MySQL-Workbench Comment behavior
 
   * `{MwbExporter:external}true{/MwbExporter:external}` (applied to Table, View)
 
