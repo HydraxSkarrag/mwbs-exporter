@@ -293,6 +293,9 @@ class Column extends BaseColumn
                 $related = $this->getRelatedName($foreign);
                 $related_text = $this->getRelatedName($foreign, false);
 
+                $attribute_name = $related ? lcfirst($related).ucfirst(Inflector::pluralize($targetEntity)) : lcfirst(Inflector::pluralize($targetEntity));
+                $funcion_name = $this->columnNameBeautifier($targetEntity).$related;
+
                 $writer
                     // setter
                     ->write('/**')
@@ -301,10 +304,10 @@ class Column extends BaseColumn
                     ->write(' * @param '.$targetEntityFQCN.' $'.lcfirst($targetEntity))
                     ->write(' * @return '.$table->getNamespace())
                     ->write(' */')
-                    ->write('public function add'.$this->columnNameBeautifier($targetEntity).$related.'('.$targetEntityFQCN.' $'.lcfirst($targetEntity).')')
+                    ->write('public function add'.$funcion_name.'('.$targetEntityFQCN.' $'.lcfirst($targetEntity).')')
                     ->write('{')
                     ->indent()
-                        ->write('$this->'.lcfirst(Inflector::pluralize($targetEntity)).$related.'[] = $'.lcfirst($targetEntity).';')
+                        ->write('$this->'.$attribute_name.'[] = $'.lcfirst($targetEntity).';')
                         ->write('')
                         ->write('return $this;')
                     ->outdent()
@@ -317,10 +320,10 @@ class Column extends BaseColumn
                     ->write(' * @param '.$targetEntityFQCN.' $'.lcfirst($targetEntity))
                     ->write(' * @return '.$table->getNamespace())
                     ->write(' */')
-                    ->write('public function remove'.$this->columnNameBeautifier($targetEntity).$related.'('.$targetEntityFQCN.' $'.lcfirst($targetEntity).')')
+                    ->write('public function remove'.$funcion_name.'('.$targetEntityFQCN.' $'.lcfirst($targetEntity).')')
                     ->write('{')
                     ->indent()
-                        ->write('$this->'.lcfirst(Inflector::pluralize($targetEntity)).$related.'->removeElement($'.lcfirst($targetEntity).');')
+                        ->write('$this->'.$attribute_name.'->removeElement($'.lcfirst($targetEntity).');')
                         ->write('')
                         ->write('return $this;')
                     ->outdent()
@@ -335,7 +338,7 @@ class Column extends BaseColumn
                     ->write('public function get'.$this->columnNameBeautifier(Inflector::pluralize($targetEntity)).$related.'()')
                     ->write('{')
                     ->indent()
-                        ->write('return $this->'.lcfirst(Inflector::pluralize($targetEntity)).$related.';')
+                        ->write('return $this->'.$attribute_name.';')
                     ->outdent()
                     ->write('}')
                 ;
@@ -383,21 +386,18 @@ class Column extends BaseColumn
             $targetEntityFQCN = $this->local->getReferencedTable()->getModelNameAsFQCN($this->local->getOwningTable()->getEntityNamespace());
 
             if ($this->local->isManyToOne()) { // is ManyToOne
-                $related = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName());
                 $related_text = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName(), false);
-                $function_name = null;
 
-                if ($this->getParent()->getManyToManyCount($this->local->getReferencedTable()->getRawTableName()) == 1) {
-                    /*
-                     * use the name of the target model when there is only one column with a reference to it.
-                     */
-                    $function_name = $this->columnNameBeautifier($targetEntity);
-                } else {
+                $attribute_name = lcfirst($targetEntity);
+
+                if ($this->getParent()->getManyToManyCount($this->local->getReferencedTable()->getRawTableName()) > 1) {
                     /*
                      * use the name of the foreign key if there is more than one column holding a relation from this table to the target table.
                      */
-                    $function_name = $this->columnNameBeautifier($this->local->getParameters()->get('name'));
+                    $attribute_name = lcfirst($this->local->getParameters()->get('name'));
                 }
+
+                $function_name = $this->columnNameBeautifier($attribute_name);
 
                 $writer
                     // setter
@@ -411,7 +411,7 @@ class Column extends BaseColumn
                     ->writeIf($this->isNotNull(), 'public function set'.$function_name.'('.$targetEntityFQCN.' $'.lcfirst($targetEntity).')')
                     ->write('{')
                     ->indent()
-                        ->write('$this->'.lcfirst($targetEntity).$related.' = $'.lcfirst($targetEntity).';')
+                        ->write('$this->'.$attribute_name.' = $'.lcfirst($targetEntity).';')
                         ->write('')
                         ->write('return $this;')
                     ->outdent()
@@ -426,7 +426,7 @@ class Column extends BaseColumn
                     ->write('public function get'.$function_name.'()')
                     ->write('{')
                     ->indent()
-                        ->write('return $this->'.lcfirst($targetEntity).$related.';')
+                        ->write('return $this->'.$attribute_name.';')
                     ->outdent()
                     ->write('}')
                     ->write('')
