@@ -43,6 +43,9 @@ class Column extends BaseColumn
         if (($length = $this->parameters->get('length')) && ($length != -1)) {
             $attributes['length'] = (int) $length;
         }
+        if ($this->isUnique) {
+            $attributes['unique'] = true;
+        }
         if (($precision = $this->parameters->get('precision')) && ($precision != -1) && ($scale = $this->parameters->get('scale')) && ($scale != -1)) {
             $attributes['precision'] = (int) $precision;
             $attributes['scale'] = (int) $scale;
