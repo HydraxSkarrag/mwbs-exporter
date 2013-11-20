@@ -75,6 +75,13 @@ class Column extends BaseColumn
         $generateBaseClasses = $this->getDocument()->getConfig()->get(Formatter::CFG_GENERATE_BASE_CLASSES);
 
         $accessModifier = $generateBaseClasses ? 'protected' : 'private';
+        $default_value = $this->getDefaultValueAsPhp();
+
+        if ($default_value !== null) {
+            $default_value = ' = ' . $default_value;
+        } else {
+            $default_value = '';
+        }
 
         $writer
             ->write('/**')
@@ -86,10 +93,15 @@ class Column extends BaseColumn
             ->writeIf($this->isAutoIncrement(),
                     ' * '.$this->getTable()->getAnnotation('GeneratedValue', array('strategy' => 'AUTO')))
             ->write(' */')
-            ->write($accessModifier.' $'.$this->getPhpColumnName().';')
+            ->write($accessModifier.' $'.$this->getPhpColumnName().$default_value.';')
             ->write('')
         ;
 
+        return $this;
+    }
+
+    public function writeConstructor(WriterInterface $writer)
+    {
         return $this;
     }
 
@@ -471,5 +483,44 @@ class Column extends BaseColumn
         }
 
         return $this;
+    }
+
+    private function getDefaultValueAsPhp()
+    {
+        $default_value = $this->getDefaultValue();
+
+        if ($default_value !== null) {
+            $converter = $this->getDocument()->getFormatter()->getDatatypeConverter();
+            $nativeType = $converter->getNativeType($converter->getMappedType($this));
+
+            switch ($nativeType) {
+                case 'array':
+                    $default_value = is_array($default_value) ? var_export($default_value, true) : null;
+                break;
+                case 'boolean':
+                    $default_value = is_bool($default_value) ? ($default_value ? 'true' : 'false') : null;
+                break;
+                case 'integer':
+                    if (!is_int($default_value) && !(is_string($default_value) && preg_match('/^-?\d+$/', $default_value))) {
+                        $default_value = null;
+                    }
+                break;
+                case 'string':
+                    $default_value = var_export($default_value, true);
+                break;
+                case 'float':
+                    if (!is_int($default_value) && !is_float($default_value) && !(is_string($default_value) && preg_match('/^-?\d+$/', $default_value))) {
+                        $default_value = null;
+                    }
+                break;
+                case 'object':
+                case 'datetime':
+                default:
+                    $default_value = null;
+                break;
+            }
+        }
+
+        return $default_value;
     }
 }

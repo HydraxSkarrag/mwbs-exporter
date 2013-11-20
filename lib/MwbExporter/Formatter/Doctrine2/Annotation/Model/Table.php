@@ -306,6 +306,7 @@ class Table extends BaseTable
                     foreach ($_this->getManyToManyRelations() as $relation) {
                         $writer->write('$this->%s = new %s();', lcfirst(Inflector::pluralize($relation['refTable']->getModelName())), $_this->getCollectionClass(false));
                     }
+                    $_this->getColumns()->writeConstructor($writer);
                 })
             ->outdent()
             ->write('}')

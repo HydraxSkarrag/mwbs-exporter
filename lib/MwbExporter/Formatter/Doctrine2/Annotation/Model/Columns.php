@@ -76,4 +76,13 @@ class Columns extends BaseColumns
 
         return $this;
     }
+
+    public function writeConstructor(WriterInterface $writer)
+    {
+        foreach ($this->columns as $column) {
+            $column->writeConstructor($writer);
+        }
+
+        return $this;
+    }
 }
