@@ -138,7 +138,7 @@ class Column extends BaseColumn
 
             $targetEntity = $foreign->getOwningTable()->getModelName();
             $targetEntityFQCN = $foreign->getOwningTable()->getModelNameAsFQCN($foreign->getReferencedTable()->getEntityNamespace());
-            $mappedBy = $foreign->getReferencedTable()->getModelName();
+            $mappedBy = $foreign->getParameters()->get('name');
 
             $annotationOptions = array(
                 'targetEntity' => $targetEntityFQCN,
@@ -201,12 +201,11 @@ class Column extends BaseColumn
 
             //check for OneToOne or ManyToOne relationship
             if ($this->local->isManyToOne()) { // is ManyToOne
-                $name = lcfirst($targetEntity);
+                $name = lcfirst($this->local->getParameters()->get('name'));
                 $inversedBy = Inflector::pluralize($annotationOptions['inversedBy']);
                 $refRelated = '';
 
                 if ($this->getParent()->getManyToManyCount($this->local->getReferencedTable()->getRawTableName()) > 1) {
-                	$name = $this->local->getParameters()->get('name');
                 	$refRelated = $this->local->getParameters()->get('name');
                 } else {
                 	$inversedBy = lcfirst($inversedBy);
@@ -403,15 +402,7 @@ class Column extends BaseColumn
             if ($this->local->isManyToOne()) { // is ManyToOne
                 $related_text = $this->getManyToManyRelatedName($this->local->getReferencedTable()->getRawTableName(), $this->local->getForeign()->getColumnName(), false);
 
-                $attribute_name = lcfirst($targetEntity);
-
-                if ($this->getParent()->getManyToManyCount($this->local->getReferencedTable()->getRawTableName()) > 1) {
-                    /*
-                     * use the name of the foreign key if there is more than one column holding a relation from this table to the target table.
-                     */
-                    $attribute_name = lcfirst($this->local->getParameters()->get('name'));
-                }
-
+                $attribute_name = lcfirst($this->local->getParameters()->get('name'));
                 $function_name = $this->columnNameBeautifier($attribute_name);
 
                 $writer
